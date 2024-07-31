@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         DB-Toggle-Switch
+// @name         Draggable GUI with Minimize, Restore, Credits, and Toggle Image
 // @namespace    http://tampermonkey.net/
-// @version      1.13
-// @description  Adds a styled, draggable GUI container with minimize, restore, and credits button to the page
+// @version      1.18
+// @description  Adds a styled, draggable GUI container with minimize, restore, credits button, and a toggle image switch to the page
 // @author       You
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -11,8 +11,9 @@
 (function() {
     'use strict';
 
-    let container, minimizedIndicator, creditsTab, openButton;
+    let container, minimizedIndicator, creditsTab, openButton, toggleImage;
     let isDragging = false;
+    let isSwitchOn = false;
 
     // Function to add custom CSS styles
     function addStyles() {
@@ -78,6 +79,15 @@
                 border-radius: 8px;
                 box-sizing: border-box;
                 transition: opacity 0.5s;
+            }
+            #toggle-image {
+                width: 100px;  /* Adjust the width as needed */
+                height: 170px; /* Adjust the height as needed */
+                cursor: pointer;
+                position: absolute; /* Ensure the image is positioned absolutely within its container */
+                top: 58%;  /* Adjust the vertical position */
+                left: 20%; /* Adjust the horizontal position */
+                transform: translate(-50%, -50%); /* Center the image */
             }
             #minimized-indicator {
                 position: fixed;
@@ -201,7 +211,7 @@
             });
 
             let creditsButton = document.createElement('button');
-            creditsButton.innerHTML = 'CREDITZ';
+            creditsButton.innerHTML = 'Credits';
             creditsButton.title = 'Credits';
             creditsButton.addEventListener('click', () => {
                 console.log('Credits button clicked');
@@ -213,6 +223,14 @@
 
             let mainContent = document.createElement('div');
             mainContent.className = 'gui-content';
+
+            toggleImage = document.createElement('img');
+            toggleImage.id = 'toggle-image';
+            toggleImage.src = 'https://i.postimg.cc/XYq51p48/Toggle-sw-itches-1.png';
+            toggleImage.alt = 'Toggle Image';
+            toggleImage.addEventListener('click', toggleSwitch);
+
+            mainContent.appendChild(toggleImage);
 
             container.appendChild(header);
             container.appendChild(mainContent);
@@ -226,20 +244,30 @@
         }
     }
 
+    // Function to toggle the switch image
+    function toggleSwitch() {
+        if (isSwitchOn) {
+            toggleImage.src = 'https://i.postimg.cc/XYq51p48/Toggle-sw-itches-1.png';
+        } else {
+            toggleImage.src = 'https://i.postimg.cc/YCPW5MSw-/Toggle-sw-itches-2.png';
+        }
+        isSwitchOn = !isSwitchOn;
+    }
+
     // Function to create the minimized indicator
     function createMinimizedIndicator() {
         minimizedIndicator = document.createElement('div');
         minimizedIndicator.id = 'minimized-indicator';
-        minimizedIndicator.innerHTML = '↩️'; // Modern icon for "Reopen"
-        minimizedIndicator.title = 'Restore';
+        minimizedIndicator.innerHTML = '☰';
+        minimizedIndicator.title = 'Restore GUI';
         minimizedIndicator.addEventListener('click', () => {
-            console.log('Restore button clicked');
+            console.log('Minimized indicator clicked');
             createOrShowGUI();
         });
         document.body.appendChild(minimizedIndicator);
     }
 
-    // Function to create and show the credits tab
+    // Function to show the credits tab
     function showCreditsTab() {
         if (!creditsTab) {
             creditsTab = document.createElement('div');
@@ -248,14 +276,14 @@
             let backButton = document.createElement('button');
             backButton.className = 'back-button';
             backButton.innerHTML = 'Back';
-            backButton.title = 'Back';
-            backButton.addEventListener('click', () => {
-                console.log('Back button clicked');
-                hideCreditsTab();
-            });
+            backButton.title = 'Back to Main GUI';
+            backButton.addEventListener('click', hideCreditsTab);
 
             creditsTab.appendChild(backButton);
             document.body.appendChild(creditsTab);
+
+            // Sync credits tab position with the main GUI container
+            syncCreditsTabPosition();
         }
 
         // Smoothly transition the main GUI out and the credits tab in
