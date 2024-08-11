@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Draggable GUI with Minimize, Restore, Credits, and Toggle Image
 // @namespace    http://tampermonkey.net/
-// @version      1.18
-// @description  Adds a styled, draggable GUI container with minimize, restore, credits button, and a toggle image switch to the page
-// @author       You
+// @version      1.11
+// @description  Adds a styled, draggable GUI container with minimize, restore, credits button, and toggle image switch to the page
+// @author       LianoVz
 // @match        *://*/*
 // @grant        GM_addStyle
 // ==/UserScript==
@@ -11,9 +11,18 @@
 (function() {
     'use strict';
 
-    let container, minimizedIndicator, creditsTab, openButton, toggleImage;
+    let container, minimizedIndicator, creditsTab, toggleImage;
     let isDragging = false;
     let isSwitchOn = false;
+
+    // Default settings
+    const defaultSettings = {
+        guiBackgroundColor: '#2e2e2e',
+        toggleImageOn: 'https://i.postimg.cc/YCPW5MSw-/Toggle-sw-itches-2.png',
+        toggleImageOff: 'https://i.postimg.cc/XYq51p48/Toggle-sw-itches-1.png'
+    };
+
+    let userSettings = { ...defaultSettings };
 
     // Function to add custom CSS styles
     function addStyles() {
@@ -25,7 +34,7 @@
                 width: 350px;
                 height: 250px;
                 padding: 20px;
-                background-color: #2e2e2e;
+                background-color: ${userSettings.guiBackgroundColor};
                 border: 3px solid #444;
                 border-radius: 12px;
                 box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
@@ -48,8 +57,6 @@
                 justify-content: space-between;
                 align-items: center;
                 padding-bottom: 10px;
-                position: relative;
-                box-sizing: border-box;
             }
             .gui-header button {
                 background: linear-gradient(135deg, #4a4a4a, #2e2e2e);
@@ -77,17 +84,16 @@
                 align-items: center;
                 background: #1e1e1e;
                 border-radius: 8px;
-                box-sizing: border-box;
                 transition: opacity 0.5s;
             }
             #toggle-image {
-                width: 100px;  /* Adjust the width as needed */
-                height: 170px; /* Adjust the height as needed */
+                width: 100px;
+                height: 170px;
                 cursor: pointer;
-                position: absolute; /* Ensure the image is positioned absolutely within its container */
-                top: 58%;  /* Adjust the vertical position */
-                left: 20%; /* Adjust the horizontal position */
-                transform: translate(-50%, -50%); /* Center the image */
+                position: absolute;
+                top: 58%;
+                left: 20%;
+                transform: translate(-50%, -50%);
             }
             #minimized-indicator {
                 position: fixed;
@@ -98,7 +104,7 @@
                 background-color: #444;
                 border: 2px solid #666;
                 border-radius: 8px;
-                display: none;
+                display: flex;
                 align-items: center;
                 justify-content: center;
                 cursor: pointer;
@@ -118,7 +124,7 @@
             #credits-tab {
                 position: fixed;
                 width: 350px;
-                height: 200px;
+                height: 250px;
                 background-color: #333;
                 border: 2px solid #444;
                 border-radius: 8px;
@@ -162,33 +168,6 @@
                 transform: scale(0.95);
                 background: linear-gradient(135deg, #6a6a6a, #4e4e4e);
             }
-            #open-button {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 100px;
-                height: 40px;
-                background-color: #444;
-                border: 2px solid #666;
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-                color: #fff;
-                font-size: 18px;
-                text-align: center;
-                transition: background 0.3s, transform 0.2s;
-                font-family: Arial, sans-serif;
-            }
-            #open-button:hover {
-                background-color: #555;
-            }
-            #open-button:active {
-                transform: scale(0.95);
-                background-color: #666;
-            }
         `);
     }
 
@@ -205,7 +184,6 @@
             minimizeButton.innerHTML = '−';
             minimizeButton.title = 'Minimize';
             minimizeButton.addEventListener('click', () => {
-                console.log('Minimize button clicked');
                 container.classList.toggle('hidden');
                 minimizedIndicator.style.display = container.classList.contains('hidden') ? 'flex' : 'none';
             });
@@ -213,10 +191,7 @@
             let creditsButton = document.createElement('button');
             creditsButton.innerHTML = 'Credits';
             creditsButton.title = 'Credits';
-            creditsButton.addEventListener('click', () => {
-                console.log('Credits button clicked');
-                showCreditsTab();
-            });
+            creditsButton.addEventListener('click', showCreditsTab);
 
             header.appendChild(minimizeButton);
             header.appendChild(creditsButton);
@@ -226,7 +201,7 @@
 
             toggleImage = document.createElement('img');
             toggleImage.id = 'toggle-image';
-            toggleImage.src = 'https://i.postimg.cc/XYq51p48/Toggle-sw-itches-1.png';
+            toggleImage.src = userSettings.toggleImageOff;
             toggleImage.alt = 'Toggle Image';
             toggleImage.addEventListener('click', toggleSwitch);
 
@@ -246,11 +221,7 @@
 
     // Function to toggle the switch image
     function toggleSwitch() {
-        if (isSwitchOn) {
-            toggleImage.src = 'https://i.postimg.cc/XYq51p48/Toggle-sw-itches-1.png';
-        } else {
-            toggleImage.src = 'https://i.postimg.cc/YCPW5MSw-/Toggle-sw-itches-2.png';
-        }
+        toggleImage.src = isSwitchOn ? userSettings.toggleImageOff : userSettings.toggleImageOn;
         isSwitchOn = !isSwitchOn;
     }
 
@@ -261,8 +232,8 @@
         minimizedIndicator.innerHTML = '☰';
         minimizedIndicator.title = 'Restore GUI';
         minimizedIndicator.addEventListener('click', () => {
-            console.log('Minimized indicator clicked');
             createOrShowGUI();
+            minimizedIndicator.style.display = 'none'; // Hide the minimized indicator when the GUI is open
         });
         document.body.appendChild(minimizedIndicator);
     }
@@ -279,21 +250,24 @@
             backButton.title = 'Back to Main GUI';
             backButton.addEventListener('click', hideCreditsTab);
 
-            creditsTab.appendChild(backButton);
-            document.body.appendChild(creditsTab);
+            let creditsContent = document.createElement('div');
+            creditsContent.innerHTML = `
+                <h2>Credits</h2>
+                <p>Script by LianoVz</p>
+                <p>Version 1.10</p>
+                <p>Thank you for using this script!</p>
+            `;
 
-            // Sync credits tab position with the main GUI container
-            syncCreditsTabPosition();
+            creditsTab.appendChild(backButton);
+            creditsTab.appendChild(creditsContent);
+            document.body.appendChild(creditsTab);
         }
 
-        // Smoothly transition the main GUI out and the credits tab in
         if (container) {
             container.classList.add('hidden');
         }
         creditsTab.classList.add('visible');
         creditsTab.classList.remove('hidden');
-
-        // Sync credits tab position with the main GUI container
         syncCreditsTabPosition();
     }
 
@@ -317,55 +291,34 @@
         }
     }
 
-    // Function to create the open button
-    function createOpenButton() {
-        openButton = document.createElement('div');
-        openButton.id = 'open-button';
-        openButton.innerHTML = 'Open';
-        openButton.title = 'Open GUI';
-        openButton.addEventListener('click', () => {
-            console.log('Open button clicked');
-            createOrShowGUI();
-            openButton.style.display = 'none';
-        });
-        document.body.appendChild(openButton);
-    }
-
-    // Function to make an element draggable and keep credits tab in sync
+    // Function to make an element draggable
     function makeDraggable(element) {
-        let offsetX, offsetY, mouseX, mouseY;
+        let offsetX, offsetY;
 
-        element.addEventListener('mousedown', function(e) {
+        element.addEventListener('mousedown', (e) => {
             isDragging = true;
             offsetX = e.clientX - parseFloat(getComputedStyle(element).left);
             offsetY = e.clientY - parseFloat(getComputedStyle(element).top);
 
+            const onMouseMove = (e) => {
+                if (!isDragging) return;
+                element.style.left = `${e.clientX - offsetX}px`;
+                element.style.top = `${e.clientY - offsetY}px`;
+                syncCreditsTabPosition();
+            };
+
+            const onMouseUp = () => {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         });
-
-        function onMouseMove(e) {
-            if (!isDragging) return;
-
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-
-            element.style.left = `${mouseX - offsetX}px`;
-            element.style.top = `${mouseY - offsetY}px`;
-
-            // Update the credits tab position to match the main GUI container
-            syncCreditsTabPosition();
-        }
-
-        function onMouseUp() {
-            isDragging = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        }
     }
 
-    // Initialize GUI, minimized indicator, and open button
+    // Initialize GUI and minimized indicator
     addStyles();
-    createOpenButton(); // Create open button on page load
     createMinimizedIndicator();
 })();
